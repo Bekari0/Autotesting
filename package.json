@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test": "mocha --recursive --timeout 60000 ./lab3/tests/*.js"
+  },
+  "dependencies": {
+    "chai": "^4.4.1",
+    "mocha": "^10.4.0",
+    "save": "^2.9.0",
+    "selenium-webdriver": "^4.21.0"
+  }
+}
