@@ -4,14 +4,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import re
 
+# Функция для очистки строки с ценой от ненужных символов
+def clean_price(price_str):
+    # Удаляем все символы, кроме цифр и символа "₽"
+    cleaned_price = re.sub(r'[^\d]', '', price_str)  # Убираем все, что не цифры
+    return cleaned_price
 
 @pytest.fixture
 def setup_browser():
     browser = webdriver.Chrome()
     yield browser
     browser.quit()
-
 
 def test_price_sorting_verification(setup_browser):
     driver = setup_browser
@@ -42,7 +47,11 @@ def test_price_sorting_verification(setup_browser):
             product_name = item.find_element(By.CSS_SELECTOR, "a[data-auto='snippet-link']").text
             product_price = item.find_element(By.CSS_SELECTOR, "span[data-auto='snippet-price-current']").text
             print(f"Товар: {product_name}, Стоимость: {product_price}")
-            prices_before.append(int(product_price.replace(' ', '').replace('₽', '')))
+
+            # Чистим цену перед преобразованием
+            cleaned_price = clean_price(product_price)
+            prices_before.append(int(cleaned_price))
+
         except Exception as error:
             print(f"Ошибка извлечения данных: {error}")
 
@@ -50,8 +59,12 @@ def test_price_sorting_verification(setup_browser):
     price_sort_btn = explicit_wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-autotest-id='aprice']")))
     price_sort_btn.click()
 
-    # Ждем обновления товаров после сортировки
+    # Дожидаемся обновления списка товаров после сортировки
+    print("Ожидаем завершение сортировки...")
     explicit_wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-apiary-widget-name='@light/Organic']")))
+    
+    # Даем больше времени для динамической подгрузки товаров
+    WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-apiary-widget-name='@light/Organic']")))
 
     # Извлекаем первые 10 товаров после сортировки
     sorted_items = driver.find_elements(By.CSS_SELECTOR, "div[data-apiary-widget-name='@light/Organic']")[:10]
@@ -62,10 +75,19 @@ def test_price_sorting_verification(setup_browser):
             product_name = item.find_element(By.CSS_SELECTOR, "a[data-auto='snippet-link']").text
             product_price = item.find_element(By.CSS_SELECTOR, "span[data-auto='snippet-price-current']").text
             print(f"Товар: {product_name}, Стоимость: {product_price}")
-            sorted_prices.append(int(product_price.replace(' ', '').replace('₽', '')))
+
+            # Чистим цену перед преобразованием
+            cleaned_price = clean_price(product_price)
+            sorted_prices.append(int(cleaned_price))
+
         except Exception as error:
             print(f"Ошибка извлечения данных: {error}")
 
     # Убедимся, что сортировка корректна
     assert len(sorted_prices) >= 10, "Недостаточно товаров для проверки сортировки!"
+
+    # Печатаем для диагностики, какие цены до и после сортировки
+    print("Цены после сортировки:", sorted_prices)
+
+    # Проверим, что список цен отсортирован по возрастанию
     assert sorted_prices == sorted(sorted_prices), "Цены не отсортированы по возрастанию!"
