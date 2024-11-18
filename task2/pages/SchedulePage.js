@@ -88,12 +88,31 @@ class SchedulePage {
     }
 
     async getScheduleForDay(day) {
-        if (day === 'Воскресенье') {
-            console.log("Воскресенье пропущено.");
-            return null;
-        }
-        return await this.locateElement(By.xpath(`//div[div[text()='${day}']]`));
+    if (day === 'Sunday') {  // Пропускаем воскресенье, если это необходимо
+        console.log("Sunday is skipped.");
+        return null;
     }
+
+    // Преобразуем день в локализованный формат
+    const dayMapping = {
+        "Sunday": "Воскресенье",
+        "Monday": "Понедельник",
+        "Tuesday": "Вторник",
+        "Wednesday": "Среда",
+        "Thursday": "Четверг",
+        "Friday": "Пятница",
+        "Saturday": "Суббота"
+    };
+
+    const localizedDay = dayMapping[day];
+    console.log(`Localized day: ${localizedDay}`);
+
+    // Улучшенный XPath
+    const xpath = `//div[contains(@class, 'schedule-day') and .//div[contains(text(), '${localizedDay}')]]`;
+    
+    return await this.locateElement(By.xpath(xpath));
+}
+
 }
 
 module.exports = SchedulePage;
