@@ -1,11 +1,11 @@
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 import unittest
 import time
 
-class BasePage:
+class PageBase:
     def __init__(self):
         self.URL = "https://lambdatest.github.io/sample-todo-app/"
         options = webdriver.EdgeOptions()
@@ -25,12 +25,12 @@ class BasePage:
         )
 
     def start_session(self):
-        return self.driver.get(self.URL)
+        self.driver.get(self.URL)
 
     def stop_session(self):
-        return self.driver.close()
+        self.driver.quit()
 
-class Locators:
+class LocatorDefinitions:
     START_TEXT = (By.CLASS_NAME, "ng-binding")
     UNCLICKED_ELEMS = (By.CLASS_NAME, "done-false")
     CLICKED_ELEMS = (By.CLASS_NAME, "done-true")
@@ -38,43 +38,41 @@ class Locators:
     INPUT = (By.ID, "sampletodotext")
     NEW_EL = "NEW_ELEMENT"
 
-class MyPage(BasePage):
+class TodoPage(PageBase):
     def cheking_start_text(self):
-        txt = self.find_element(Locators.START_TEXT).text
+        txt = self.find_element(LocatorDefinitions.START_TEXT).text
         return txt
 
     def take_first_elem(self):
-        return list(map(lambda x: x.text, self.find_elements(Locators.UNCLICKED_ELEMS)))[0]
+        return list(map(lambda x: x.text, self.find_elements(LocatorDefinitions.UNCLICKED_ELEMS)))[0]
 
     def action_click_elements(self):
-        elements = list(map(lambda x: x.text, self.find_elements(Locators.UNCLICKED_ELEMS)))
-
+        elements = list(map(lambda x: x.text, self.find_elements(LocatorDefinitions.UNCLICKED_ELEMS)))
         for i in range(len(elements)):
             position = i + 1
             self.find_element((By.NAME, f"li{position}")).click()
-            last_el = list(map(lambda x: x.text, self.find_elements(Locators.CLICKED_ELEMS)))[-1]
+            last_el = list(map(lambda x: x.text, self.find_elements(LocatorDefinitions.CLICKED_ELEMS)))[-1]
             time.sleep(1)
-            
-        self.find_element(Locators.INPUT).send_keys(Locators.NEW_EL)
+
+        self.find_element(LocatorDefinitions.INPUT).send_keys(LocatorDefinitions.NEW_EL)
         time.sleep(1)
-        self.find_element(Locators.BTN).click()
+        self.find_element(LocatorDefinitions.BTN).click()
         time.sleep(1)
         self.find_element((By.NAME, f"li{position + 1}")).click()
         time.sleep(1)
         return last_el
 
     def check_action_click_element(self):
-        last_el = list(map(lambda x: x.text, self.find_elements(Locators.CLICKED_ELEMS)))[-1]
+        last_el = list(map(lambda x: x.text, self.find_elements(LocatorDefinitions.CLICKED_ELEMS)))[-1]
         return last_el
 
     def check_count(self):
-        return len(list(map(lambda x: x.text, self.find_elements(Locators.CLICKED_ELEMS))))
+        return len(list(map(lambda x: x.text, self.find_elements(LocatorDefinitions.CLICKED_ELEMS))))
 
-class TestCase(unittest.TestCase):
-  
+class TodoAppTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.pg = MyPage()
+        cls.pg = TodoPage()
         cls.pg.start_session()
 
     @classmethod
@@ -95,7 +93,7 @@ class TestCase(unittest.TestCase):
 
     def test_4(self):
         res = self.pg.check_action_click_element()
-        self.assertEqual(res, Locators.NEW_EL)
+        self.assertEqual(res, LocatorDefinitions.NEW_EL)
 
     def test_5(self):
         res = self.pg.check_count()
